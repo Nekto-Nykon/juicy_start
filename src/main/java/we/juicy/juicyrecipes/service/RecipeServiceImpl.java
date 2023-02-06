@@ -5,13 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import we.juicy.juicyrecipes.domain.Contents;
+import we.juicy.juicyrecipes.domain.Ingredient;
 import we.juicy.juicyrecipes.domain.Recipe;
+import we.juicy.juicyrecipes.dto.IngredientContentsDifference;
 import we.juicy.juicyrecipes.repository.ContentsRepository;
 import we.juicy.juicyrecipes.repository.RecipeRepository;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -21,6 +21,7 @@ public class RecipeServiceImpl implements RecipeService {
 
     private final RecipeRepository recipeRepository;
     private final ContentsRepository contentsRepository;
+    private final SingleUserService userService;
 
     @Override
     public Set<Recipe> findAll() {
@@ -69,7 +70,42 @@ public class RecipeServiceImpl implements RecipeService {
     public Recipe save(Recipe recipe){
         return recipeRepository.save(recipe);
     }
+    @Override
+    public List<IngredientContentsDifference> findMissingIngredientAndAmount(Integer recipeId){
+        Optional<Recipe> maybeRecipe = recipeRepository.findById(recipeId);
+        if (maybeRecipe.isEmpty()){
+            throw new RuntimeException("Recipe is not found");
+        }
+        List<Contents> recipeContents = maybeRecipe.get().getNecessaryAmount();
+        List<Contents> userContents = userService.getCurrentUser().getAmountPresent();
+        List<Integer> nessesaryAmount = recipeContents.stream()
+                .map(recipeIngred -> showNessesaryAmount(recipeIngred, userContents))
+                .collect(Collectors.toList());
 
+        List<IngredientContentsDifference> ingrDiff = new ArrayList<>();
+        List<Ingredient> ingrList = recipeContents.stream().map(it -> it.getIngredient()).collect(Collectors.toList());
 
+        for(int i = 0 ; i < ingrList.size(); i++){
+            ingrDiff.add(new IngredientContentsDifference(ingrList.get(i),nessesaryAmount.get(i)));
+        }
+        return ingrDiff;
+    }
+
+    private Integer showNessesaryAmount(Contents ingredientContents, List<Contents> userContents){
+        Optional<Contents> maybeFindContents = userContents
+                .stream()
+                .filter(it -> it.getIngredient().equals(ingredientContents.getIngredient()))
+                .findFirst();
+        if(maybeFindContents.isPresent()){
+            Contents findUserContents = maybeFindContents.get();
+            Integer result = 0;
+            if(findUserContents.getAmount() < ingredientContents.getAmount()){
+                result = ingredientContents.getAmount() - findUserContents.getAmount();
+                return result;
+            }
+            return result;
+        }
+        return ingredientContents.getAmount();
+    }
 
 }

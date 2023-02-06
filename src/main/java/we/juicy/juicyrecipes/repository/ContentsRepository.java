@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface ContentsRepository extends CrudRepository<Contents, Integer> {
     List<Contents> findByRecipeUserId(Integer recipeUser);
+
+    List<Contents> findByRecipeId(Integer recipeId);
 }
