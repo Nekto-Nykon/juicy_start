@@ -50,7 +50,6 @@ public class Contents {
                 ", ingredient=" + ingredient +
                 ", amount=" + amount +
                 ", recipe=" + recipe +
-                ", recipeUser=" + recipeUser.getName() +
                 '}';
     }
 }
