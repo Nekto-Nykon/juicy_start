@@ -1,6 +1,9 @@
 # Juicy application
 Recipe notes application
 
+## Docker Image 
+nykonoleg/jc_im_int20h  
+
 ### Prerequisites 
 - Apache Maven 4.0.0-alpha-4
 - Java 17.0.6
